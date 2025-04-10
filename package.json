@@ -4,7 +4,7 @@
   "description": "Starter template for creating a Webex Teams bot",
   "main": "index.js",
   "scripts": {
-    "start": "npm install && node --use_strict index.js"
+    "start": "npm install & node --use_strict index.js"
   },
   "repository": {
     "type": "git",
@@ -25,7 +25,7 @@
     "body-parser": "^1.15.2",
     "dotenv": "^16.0.3",
     "express": "^4.14.0",
-    "webex-node-bot-framework": "^2.3.14"
+    "webex-node-bot-framework": "^1.2.0"
   },
   "devDependencies": {
     "prettier": "2.7.1"

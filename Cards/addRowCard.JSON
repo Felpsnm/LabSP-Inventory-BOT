@@ -1,0 +1,58 @@
+{
+    "type": "AdaptiveCard",
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.3",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Inventário LAB-SP - Add Row",
+            "wrap": true
+        },
+        {
+            "type": "Input.Text",
+            "label": "Equipamento",
+            "isRequired": false,
+            "placeholder": "Nome do Equipamento",
+            "errorMessage": "Please provide a valid input",
+            "id": "PRODUTO"
+        },
+        {
+            "type": "Input.Text",
+            "placeholder": "Serial Number",
+            "label": "Serial Number",
+            "id": "SERIAL",
+            "isRequired": false,
+            "errorMessage": "Please provide a valid input"
+        },
+        {
+            "type": "Input.Text",
+            "placeholder": "Tag/Ativo",
+            "label": "Tag/Ativo",
+            "id": "TAG_ATIVO",
+            "isRequired": false,
+            "errorMessage": "Please provide a valid input"
+        },
+        {
+            "type": "Input.Text",
+            "placeholder": "Part Number",
+            "label": "Part Number",
+            "id": "PN",
+            "isRequired": false,
+            "errorMessage": "Please provide a valid input"
+        },
+        {
+            "type": "Input.Text",
+            "placeholder": "Rack",
+            "label": "Rack",
+            "id": "RACK",
+            "isRequired": false,
+            "errorMessage": "Please provide a valid input"
+        }
+    ],
+    "actions": [
+        {
+            "type": "Action.Submit",
+            "title": "Enviar"
+        }
+    ]
+}

@@ -5,11 +5,15 @@ var webhook = require("webex-node-bot-framework/webhook");
 var express = require("express");
 var bodyParser = require("body-parser");
 var app = express();
+var addRowCard = require("./Cards/addRowCard.json");
+var getRowCard = require("./Cards/getRowCard.json");
+
 app.use(bodyParser.json());
 app.use(express.static("images"));
 
 const config = {
   token: process.env.BOTTOKEN,
+  restrictedToEmailDomains: "cisco.com",
 };
 
 // Only pass the webhook URL and port if it has been set in the environment
@@ -84,179 +88,91 @@ framework.on("log", (msg) => {
 // specifies priority.   If multiple handlers match they will all be called unless the priority
 // was specified, in which case, only the handler(s) with the lowest priority will be called
 
-/* On mention with command
-ex User enters @botname framework, the bot will write back in markdown
-*/
 framework.hears(
-  "framework",
+  "add",
   (bot) => {
-    console.log("framework command received");
-    bot.say(
-      "markdown",
-      "The primary purpose for the [webex-node-bot-framework](https://github.com/WebexCommunity/webex-node-bot-framework) was to create a framework based on the [webex-jssdk](https://webex.github.io/webex-js-sdk) which continues to be supported as new features and functionality are added to Webex. This version of the project was designed with two themes in mind: \n\n\n * Mimimize Webex API Calls. The original flint could be quite slow as it attempted to provide bot developers rich details about the space, membership, message and message author. This version eliminates some of that data in the interests of efficiency, (but provides convenience methods to enable bot developers to get this information if it is required)\n * Leverage native Webex data types. The original flint would copy details from the webex objects such as message and person into various flint objects. This version simply attaches the native Webex objects. This increases the framework's efficiency and makes it future proof as new attributes are added to the various webex DTOs "
-    );
-  },
-  "**framework**: (learn more about the Webex Bot Framework)",
-  0
-);
+    console.log("add command received"); 
+    bot.sendCard(addRowCard);
 
-/* On mention with command, using other trigger data, can use lite markdown formatting
-ex User enters @botname 'info' phrase, the bot will provide personal details
-*/
-framework.hears(
-  "info",
-  (bot, trigger) => {
-    console.log("info command received");
-    //the "trigger" parameter gives you access to data about the user who entered the command
-    let personAvatar = trigger.person.avatar;
-    let personEmail = trigger.person.emails[0];
-    let personDisplayName = trigger.person.displayName;
-    let outputString = `Here is your personal information: \n\n\n **Name:** ${personDisplayName}  \n\n\n **Email:** ${personEmail} \n\n\n **Avatar URL:** ${personAvatar}`;
-    bot.say("markdown", outputString);
-  },
-  "**info**: (get your personal details)",
-  0
-);
+    framework.on('attachmentAction', (bot, trigger) => {
+      const script_path = ['./Scripts/addRowSPInventory.py'];
+      const cardInputs = trigger.attachmentAction.inputs
+      const { spawn } = require('child_process');
 
-/* On mention with bot data
-ex User enters @botname 'space' phrase, the bot will provide details about that particular space
-*/
-framework.hears(
-  "space",
-  (bot) => {
-    console.log("space. the final frontier");
-    let roomTitle = bot.room.title;
-    let spaceID = bot.room.id;
-    let roomType = bot.room.type;
+      pythonProcess = spawn('python', [script_path, cardInputs.PRODUTO, cardInputs.SERIAL, cardInputs.TAG_ATIVO, cardInputs.PN, cardInputs.RACK]);
 
-    let outputString = `The title of this space: ${roomTitle} \n\n The roomID of this space: ${spaceID} \n\n The type of this space: ${roomType}`;
-
-    console.log(outputString);
-    bot
-      .say("markdown", outputString)
-      .catch((e) => console.error(`bot.say failed: ${e.message}`));
-  },
-  "**space**: (get details about this space) ",
-  0
-);
-
-/*
-   Say hi to every member in the space
-   This demonstrates how developers can access the webex
-   sdk to call any Webex API.  API Doc: https://webex.github.io/webex-js-sdk/api/
-*/
-framework.hears(
-  "say hi to everyone",
-  (bot) => {
-    console.log("say hi to everyone.  Its a party");
-    // Use the webex SDK to get the list of users in this space
-    bot.webex.memberships
-      .list({ roomId: bot.room.id })
-      .then((memberships) => {
-        for (const member of memberships.items) {
-          if (member.personId === bot.person.id) {
-            // Skip myself!
-            continue;
-          }
-          let displayName = member.personDisplayName
-            ? member.personDisplayName
-            : member.personEmail;
-          bot.say(`Hello ${displayName}`);
-        }
-      })
-      .catch((e) => {
-        console.error(`Call to sdk.memberships.get() failed: ${e.messages}`);
-        bot.say("Hello everybody!");
+      pythonProcess.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+        bot.say("markdown", `stdout: ${data}`);
       });
+
+      pythonProcess.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+        bot.say("markdown", `stderr: ${data}`);
+      });
+
+      pythonProcess.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+        if (code == '0') { 
+          bot.say("markdown", `A linha foi adicionada com sucesso!`);
+        } else if (code == '2') {
+          bot.say("markdown", `Erro: Não foi possível adicionar a linha.`);
+        } else {
+          bot.say("markdown", `child process exited with code ${code}`);
+        }
+      });
+    });
+
+    /*
+    Caso queira passar os parâmetros diretamente no texto (Sem Cards)    
+    let webex_message = trigger.text;
+
+    let python_args = webex_message.split(' ');
+    python_args = python_args.slice(3, 8);
+    python_args = script_path.concat(python_args);  
+    
+    */
   },
-  "**say hi to everyone**: (everyone gets a greeting using a call to the Webex SDK)",
+  "**add**: (add a row to Cisco SP Inventory)",
   0
 );
 
-// Buttons & Cards data
-let cardJSON = {
-  $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
-  type: "AdaptiveCard",
-  version: "1.0",
-  body: [
-    {
-      type: "ColumnSet",
-      columns: [
-        {
-          type: "Column",
-          width: "5",
-          items: [
-            {
-              type: "Image",
-              url: "Your avatar appears here!",
-              size: "large",
-              horizontalAlignment: "Center",
-              style: "person",
-            },
-            {
-              type: "TextBlock",
-              text: "Your name will be here!",
-              size: "medium",
-              horizontalAlignment: "Center",
-              weight: "Bolder",
-            },
-            {
-              type: "TextBlock",
-              text: "And your email goes here!",
-              size: "small",
-              horizontalAlignment: "Center",
-              isSubtle: true,
-              wrap: false,
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
-
-/* On mention with card example
-ex User enters @botname 'card me' phrase, the bot will produce a personalized card - https://developer.webex.com/docs/api/guides/cards
-*/
 framework.hears(
-  "card me",
-  (bot, trigger) => {
-    console.log("someone asked for a card");
-    let avatar = trigger.person.avatar;
+  "search",
+  (bot) => {
+    console.log("search command received"); 
+    bot.sendCard(getRowCard);
 
-    cardJSON.body[0].columns[0].items[0].url = avatar
-      ? avatar
-      : `${config.webhookUrl}/missing-avatar.jpg`;
-    cardJSON.body[0].columns[0].items[1].text = trigger.person.displayName;
-    cardJSON.body[0].columns[0].items[2].text = trigger.person.emails[0];
-    bot.sendCard(
-      cardJSON,
-      "This is customizable fallback text for clients that do not support buttons & cards"
-    );
-  },
-  "**card me**: (a cool card!)",
-  0
-);
+    framework.on('attachmentAction', (bot, trigger) => {
+      const script_path = ['./Scripts/getRowsSPInventory.py'];
+      const cardInputs = trigger.attachmentAction.inputs
+      const { spawn } = require('child_process');
 
-/* On mention reply example
-ex User enters @botname 'reply' phrase, the bot will post a threaded reply
-*/
-framework.hears(
-  "reply",
-  (bot, trigger) => {
-    console.log("someone asked for a reply.  We will give them two.");
-    bot.reply(
-      trigger.message,
-      "This is threaded reply sent using the `bot.reply()` method.",
-      "markdown"
-    );
-    var msg_attach = {
-      text: "This is also threaded reply with an attachment sent via bot.reply(): ",
-      file: "https://media2.giphy.com/media/dTJd5ygpxkzWo/giphy-downsized-medium.gif",
-    };
-    bot.reply(trigger.message, msg_attach);
+      pythonProcess = spawn('python', [script_path, cardInputs.COLUMN, cardInputs.QUERY]);
+
+      pythonProcess.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+        bot.say("markdown", `${data}`);
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+        bot.say("markdown", `stderr: ${data}`);
+      });
+
+      pythonProcess.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+        if (code == '0') { 
+          bot.say("markdown", `Pesquisa realizada com sucesso!`);
+        } else if (code == '2') {
+          bot.say("markdown", `Erro: Não foi possível realizar a pesquisa.`);
+        } else {
+          bot.say("markdown", `child process exited with code ${code}`);
+        }
+      });
+    });
   },
-  "**reply**: (have bot reply to your message)",
+  "**search**: (Get matching rows of the Cisco SP Inventory)",
   0
 );
 

@@ -1,0 +1,55 @@
+{
+    "type": "AdaptiveCard",
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.3",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Inventário LAB-SP - Get Row",
+            "wrap": true
+        },
+        {
+            "type": "Input.ChoiceSet",
+            "choices": [
+                {
+                    "title": "Produto",
+                    "value": "PRODUTO"
+                },
+                {
+                    "title": "Serial Number",
+                    "value": "SERIAL"
+                },
+                {
+                    "title": "Tag/Ativo",
+                    "value": "TAG ATIVO"
+                },
+                {
+                    "title": "Part Number",
+                    "value": "PN"
+                },
+                {
+                    "title": "Rack",
+                    "value": "RACK"
+                }
+            ],
+            "placeholder": "Produto",
+            "id": "COLUMN",
+            "label": "Column",
+            "value": "PRODUTO"
+        },
+        {
+            "type": "Input.Text",
+            "placeholder": "Digite aqui a sua pesquisa",
+            "label": "Query",
+            "id": "QUERY",
+            "errorMessage": "Please provide a valid input",
+            "isRequired": true
+        }
+    ],
+    "actions": [
+        {
+            "type": "Action.Submit",
+            "title": "Enviar"
+        }
+    ]
+}
